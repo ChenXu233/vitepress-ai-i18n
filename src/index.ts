@@ -47,6 +47,10 @@ interface Config {
     targets: string[];
     model: string;
     glossary: string | null;
+    prompt?: {
+        translate?: string;
+        sync?: string;
+    };
 }
 
 /**
@@ -81,6 +85,7 @@ async function getResolvedConfig(options: any): Promise<Config> {
         targets,
         model: options.model || process.env.AI_MODEL || fileConfig.model || 'gpt-4o-mini',
         glossary: options.glossary || fileConfig.glossary || null,
+        prompt: fileConfig.prompt || undefined,
     };
 }
 
