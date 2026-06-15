@@ -36,6 +36,27 @@ export function interpolateVariables(
   return result;
 }
 
+/**
+ * Filter glossary to only include terms present in the content.
+ * Case-insensitive substring matching.
+ */
+export function filterGlossary(
+  content: string,
+  glossary: Record<string, string>
+): Record<string, string> {
+  if (!content || !glossary || Object.keys(glossary).length === 0) {
+    return {};
+  }
+  const lowerContent = content.toLowerCase();
+  const filtered: Record<string, string> = {};
+  for (const [key, value] of Object.entries(glossary)) {
+    if (lowerContent.includes(key.toLowerCase())) {
+      filtered[key] = value;
+    }
+  }
+  return filtered;
+}
+
 export class Translator {
   private client: OpenAI;
   constructor(apiKey: string, baseURL: string) {
