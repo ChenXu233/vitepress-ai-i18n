@@ -164,7 +164,7 @@ async function runSync(config: Config) {
         const spinner = ora(t.syncing(target)).start();
 
         // Prompt to extract nav/sidebar and prefix links
-        const syncPrompt = `Extract 'nav' and 'sidebar' arrays from the provided VitePress config code. Translate 'text' and 'label' values to ${target}. Link rule: if it starts with '/', prefix it with '/${target}'. Return ONLY a clean JSON object.`;
+        const syncPrompt = `Extract 'nav' and 'sidebar' from the VitePress config code. Translate 'text' and 'label' values to ${target}. For 'link' values only: if it starts with '/', prefix it with '/${target}'. Do NOT modify sidebar object keys — keep them exactly as-is. Return ONLY a clean JSON object.`;
 
         try {
             let result = await translator.translate(rawConfig, target, config.model, {}, syncPrompt);
