@@ -225,7 +225,11 @@ AI_BASE_URL=https://api.deepseek.com/v1
         const configContent = {
             source: 'docs',
             target: 'zh',
-            glossary: null
+            glossary: null,
+            prompt: {
+                translate: '',
+                sync: ''
+            }
         };
         await fs.writeJson(configPath, configContent, { spaces: 2 });
         console.log(chalk.green(t.configCreated));
