@@ -1,5 +1,41 @@
 import OpenAI from 'openai';
 
+/**
+ * Interpolate {{variable}} placeholders in a prompt string.
+ * Appends any variables that were NOT used in the template.
+ */
+export function interpolateVariables(
+  template: string,
+  variables: Record<string, string>
+): string {
+  const used = new Set<string>();
+  let result = template.replace(
+    /\{\{(lang|glossary|target)\}\}/g,
+    (_match, key: string) => {
+      used.add(key);
+      return variables[key] ?? '';
+    }
+  );
+
+  // Append missing variables
+  const suffixes: string[] = [];
+  if (variables.lang && !used.has('lang')) {
+    suffixes.push(`Target language: ${variables.lang}`);
+  }
+  if (variables.target && !used.has('target')) {
+    suffixes.push(`Target language: ${variables.target}`);
+  }
+  if (variables.glossary && !used.has('glossary')) {
+    suffixes.push(`Glossary: ${variables.glossary}`);
+  }
+
+  if (suffixes.length > 0) {
+    result = result + '\n' + suffixes.join('\n');
+  }
+
+  return result;
+}
+
 export class Translator {
   private client: OpenAI;
   constructor(apiKey: string, baseURL: string) {
