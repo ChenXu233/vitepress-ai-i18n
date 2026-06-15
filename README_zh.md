@@ -122,6 +122,34 @@ export default defineConfig({
 | `--target` | `target` | 目标语言 (逗号隔开) | `zh` |
 | `--glossary` | `glossary` | 术语表 JSON 文件路径 | `null` |
 
+### 自定义提示词
+
+您可以通过 `vpi18n.config.json` 自定义 AI 翻译和菜单同步的系统提示词：
+
+```json
+{
+  "source": "docs",
+  "target": "zh",
+  "glossary": "./glossary.json",
+  "prompt": {
+    "translate": "你是一个技术翻译专家。翻译到 {{lang}}。保持 Markdown 结构不变。",
+    "sync": "从配置中提取 nav 和 sidebar，翻译 text 和 label 到 {{target}}。只返回 JSON。"
+  }
+}
+```
+
+**可用变量：**
+
+| 变量 | 用于 | 说明 |
+|------|------|------|
+| `{{lang}}` | translate | 目标语言代码（如 `zh`、`fr`） |
+| `{{glossary}}` | translate | 术语表 JSON 字符串 |
+| `{{target}}` | sync | 目标语言代码 |
+
+如果自定义提示词中未使用某个变量，系统会自动将其追加到末尾。
+
+留空（`""`）则使用该操作的默认提示词。
+
 ### 术语表示例
 
 `glossary.json`:

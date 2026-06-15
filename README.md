@@ -115,6 +115,34 @@ export default defineConfig({
 | `--model` | `AI_MODEL` | AI model to use | `gpt-4o-mini` |
 | `--glossary` | `glossary` | Path to glossary JSON file | `null` |
 
+### Custom Prompts
+
+You can customize the AI system prompts for translation and menu sync via `vpi18n.config.json`:
+
+```json
+{
+  "source": "docs",
+  "target": "zh",
+  "glossary": "./glossary.json",
+  "prompt": {
+    "translate": "You are a technical translator. Translate to {{lang}}. Keep Markdown structure intact.",
+    "sync": "Extract nav and sidebar from config. Translate text/label to {{target}}. Return JSON only."
+  }
+}
+```
+
+**Available variables:**
+
+| Variable | Used in | Description |
+|----------|---------|-------------|
+| `{{lang}}` | translate | Target language code (e.g., `zh`, `fr`) |
+| `{{glossary}}` | translate | Glossary JSON string |
+| `{{target}}` | sync | Target language code |
+
+If a variable is not used in your custom prompt, it will be automatically appended.
+
+Leave a field empty (`""`) to use the default prompt for that operation.
+
 ### Glossary Example
 
 `glossary.json`:
