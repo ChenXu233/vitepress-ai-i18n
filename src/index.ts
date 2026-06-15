@@ -12,7 +12,7 @@ import fs from 'fs-extra';
 import chalk from 'chalk';
 import ora from 'ora';
 import 'dotenv/config';
-import { Translator } from './translator.js';
+import { Translator, interpolateVariables } from './translator.js';
 import { getFileHash, loadCache, saveCache } from './utils.js';
 
 const cli = cac('vpi');
@@ -137,7 +137,14 @@ async function runGen(config: Config) {
 
             const fileSpinner = ora(t.translating(relativePath, target)).start();
             try {
-                const translated = await translator.translate(content, target, config.model, glossaryData);
+                const translated = await translator.translate(
+                  content,
+                  target,
+                  config.model,
+                  glossaryData,
+                  config.prompt?.translate || undefined,
+                  { lang: target, glossary: JSON.stringify(glossaryData) }
+                );
                 await fs.ensureFile(outputPath);
                 await fs.writeFile(outputPath, translated || '');
 
@@ -169,7 +176,10 @@ async function runSync(config: Config) {
         const spinner = ora(t.syncing(target)).start();
 
         // Prompt to extract nav/sidebar and prefix links
-        const syncPrompt = `Extract 'nav' and 'sidebar' from the VitePress config code. Translate 'text' and 'label' values to ${target}. For 'link' values only: if it starts with '/', prefix it with '/${target}'. Do NOT modify sidebar object keys — keep them exactly as-is. Return ONLY a clean JSON object.`;
+        const defaultSyncPrompt = `Extract 'nav' and 'sidebar' from the VitePress config code. Translate 'text' and 'label' values to ${target}. For 'link' values only: if it starts with '/', prefix it with '/${target}'. Do NOT modify sidebar object keys — keep them exactly as-is. Return ONLY a clean JSON object.`;
+        const syncPrompt = config.prompt?.sync
+          ? interpolateVariables(config.prompt.sync, { target })
+          : defaultSyncPrompt;
 
         try {
             let result = await translator.translate(rawConfig, target, config.model, {}, syncPrompt);
