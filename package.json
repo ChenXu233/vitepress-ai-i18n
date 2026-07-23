@@ -1,6 +1,6 @@
 {
   "name": "@chenxu233/vitepress-ai-i18n",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A CLI tool to automate VitePress documentation translation using AI.",
   "type": "module",
   "main": "./dist/index.cjs",
