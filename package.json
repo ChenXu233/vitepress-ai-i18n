@@ -1,5 +1,5 @@
 {
-  "name": "vitepress-ai-i18n",
+  "name": "@chenxu233/vitepress-ai-i18n",
   "version": "1.0.1",
   "description": "A CLI tool to automate VitePress documentation translation using AI.",
   "type": "module",
@@ -14,6 +14,9 @@
     "README.md",
     "README_zh.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "tsup src/index.ts --format esm --watch",
     "build": "tsup src/index.ts --format esm --clean --dts --minify",
@@ -33,12 +36,12 @@
     "cli"
   ],
   "author": {
-    "name": "HoHu",
-    "email": "hohu@hohu.org",
-    "url": "https://github.com/aihohu"
+    "name": "chenxu233",
+    "email": "chenxu233@npmjs.com",
+    "url": "https://github.com/chenxu233"
   },
   "repository": {
-    "url": "https://github.com/aihohu/vitepress-ai-i18n.git"
+    "url": "https://github.com/chenxu233/vitepress-ai-i18n.git"
   },
   "license": "MIT",
   "packageManager": "pnpm@10.12.3",
