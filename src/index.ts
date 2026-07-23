@@ -176,7 +176,20 @@ async function runSync(config: Config) {
         const spinner = ora(t.syncing(target)).start();
 
         // Prompt to extract nav/sidebar and prefix links
-        const defaultSyncPrompt = `Extract 'nav' and 'sidebar' from the VitePress config code. Translate 'text' and 'label' values to ${target}. For 'link' values only: if it starts with '/', prefix it with '/${target}'. Do NOT modify sidebar object keys — keep them exactly as-is. Return ONLY a clean JSON object.`;
+        const defaultSyncPrompt = `You are a VitePress i18n config synchronizer.
+
+Translate 'text' and 'label' values to ${target}.
+
+For 'link' values in nav and sidebar items:
+- If the link starts with '/en/', REPLACE '/en/' with '/${target}/'.
+- If the link starts with '/' and does NOT contain '/en/', prefix with '/${target}'.
+
+CRITICAL - sidebar keys MUST remain EXACTLY as-is from the source:
+- NEVER modify sidebar keys like "/tutorial/", "/design/", "/reference/".
+- Do NOT add locale prefix to sidebar keys.
+- Keep them identical to the source en locale.
+
+Return ONLY valid JSON. No markdown code fences, no explanations.`;
         const syncPrompt = config.prompt?.sync
           ? interpolateVariables(config.prompt.sync, { target })
           : defaultSyncPrompt;

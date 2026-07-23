@@ -74,9 +74,11 @@ export class Translator {
     const filteredGlossary = filterGlossary(content, glossary);
 
     const defaultPrompt = `You are a technical translator. Translate to ${lang}.
-Keep Markdown structures and code blocks intact.
-Keep Frontmatter as raw YAML between --- delimiters, never wrap it in code blocks.
-Preserve Frontmatter keys, only translate their string values if applicable.
+Keep Markdown structures intact.
+Keep Frontmatter as raw YAML between --- delimiters, translate only string values.
+Keep code blocks (\`\`\`...) unchanged.
+CRITICAL: NEVER wrap the ENTIRE response in code fences like \`\`\`markdown, \`\`\`md, or \`\`\`.
+Return the translated Markdown content directly, not wrapped in any code block.
 Glossary: ${JSON.stringify(filteredGlossary)}`;
 
     let systemPrompt: string;
