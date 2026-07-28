@@ -29,6 +29,13 @@ const t = {
     translating: (f: string, l: string) => isZh ? `正在翻译 [${l}]: ${f}` : `Translating [${l}]: ${f}`,
     done: (f: string, l: string) => isZh ? `完成 [${l}]: ${f}` : `Completed [${l}]: ${f}`,
     fail: (f: string, l: string, e: string) => isZh ? `失败 [${l}]: ${f} (${e})` : `Failed [${l}]: ${f} (${e})`,
+    concurrencyInfo: (n: number) =>
+        isZh ? `  并发: ${n} 个任务同时翻译` : `  Concurrency: ${n} parallel tasks`,
+    errorSummary: (errors: { file: string; target: string; error: string }[]) =>
+        isZh
+            ? `⚠️ 翻译完成，${errors.length} 个文件失败:\n${errors.map(e => `  ${e.file} → ${e.target}: ${e.error}`).join('\n')}`
+            : `⚠️ Translation completed, ${errors.length} files failed:\n${errors.map(e => `  ${e.file} → ${e.target}: ${e.error}`).join('\n')}`,
+    strictMode: isZh ? '  严格模式: 失败即停' : '  Strict mode: stop on first failure',
     syncing: (l: string) => isZh ? `分析并提取 [${l}] 菜单配置...` : `Analyzing and extracting [${l}] menu config...`,
     syncSuccess: (f: string) => isZh ? `菜单已同步: ${f}` : `Menu synced: ${f}`,
     allDone: isZh ? '\n✨ 所有国际化任务处理完成！' : '\n✨ All i18n tasks completed!',
@@ -47,6 +54,8 @@ interface Config {
     targets: string[];
     model: string;
     glossary: string | null;
+    concurrency?: number;
+    strict?: boolean;
     prompt?: {
         translate?: string;
         sync?: string;
@@ -85,6 +94,8 @@ async function getResolvedConfig(options: any): Promise<Config> {
         targets,
         model: options.model || process.env.AI_MODEL || fileConfig.model || 'gpt-4o-mini',
         glossary: options.glossary || fileConfig.glossary || null,
+        concurrency: options.concurrency || fileConfig.concurrency || 5,
+        strict: options.strict || fileConfig.strict || false,
         prompt: fileConfig.prompt || undefined,
     };
 }
@@ -260,6 +271,8 @@ cli.command('init', 'Initialize configuration files (.env & config.json)').actio
 
 cli.command('gen', 'Translate Markdown documents')
     .option('-t, --target <lang>', 'Target language(s), e.g., en,jp')
+    .option('-c, --concurrency <n>', 'Concurrent translation tasks', { default: 5 })
+    .option('--strict', 'Stop on first error', { default: false })
     .action(async (opt) => runGen(await getResolvedConfig(opt)));
 
 cli.command('sync', 'Synchronize nav and sidebar configurations')
@@ -268,6 +281,8 @@ cli.command('sync', 'Synchronize nav and sidebar configurations')
 
 cli.command('all', 'Translate docs and sync menu (Default)')
     .option('-t, --target <lang>', 'Target language(s)')
+    .option('-c, --concurrency <n>', 'Concurrent translation tasks', { default: 5 })
+    .option('--strict', 'Stop on first error', { default: false })
     .action(async (opt) => {
         const config = await getResolvedConfig(opt);
         await runGen(config);
