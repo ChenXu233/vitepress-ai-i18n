@@ -18,11 +18,15 @@ export function createCacheWriter(cachePath: string) {
      * 追加一个缓存写入操作。
      * 返回 Promise 但不阻塞调用方，调用方可以 await 确保写入完成（用于退出前）。
      */
-    async update(cacheKey: string, hash: string): Promise<void> {
+    update(cacheKey: string, hash: string): Promise<void> {
       chain = chain.then(async () => {
-        const cache = await loadCache(cachePath);
-        cache[cacheKey] = hash;
-        await saveCache(cachePath, cache);
+        try {
+          const cache = await loadCache(cachePath);
+          cache[cacheKey] = hash;
+          await saveCache(cachePath, cache);
+        } catch (err) {
+          console.error(`[cache] write failed: ${cacheKey}`, err);
+        }
       });
       return chain;
     },
@@ -30,8 +34,8 @@ export function createCacheWriter(cachePath: string) {
     /**
      * 等待所有排队写入完成。程序退出前调用。
      */
-    async wait(): Promise<void> {
-      await chain;
+    wait(): Promise<void> {
+      return chain;
     },
   };
 }
