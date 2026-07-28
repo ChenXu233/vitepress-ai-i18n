@@ -13,7 +13,8 @@ import chalk from 'chalk';
 import ora from 'ora';
 import 'dotenv/config';
 import { Translator, interpolateVariables } from './translator.js';
-import { getFileHash, loadCache, saveCache } from './utils.js';
+import { getFileHash, loadCache, createCacheWriter } from './utils.js';
+import pLimit from 'p-limit';
 
 const cli = cac('vpi');
 
@@ -115,6 +116,7 @@ async function runGen(config: Config) {
     const sourceDir = path.resolve(config.source);
     const cachePath = path.resolve(sourceDir, '.i18n-cache.json');
     const cache = await loadCache(cachePath);
+    const cacheWriter = createCacheWriter(cachePath);
 
     let glossaryData = {};
     if (config.glossary && await fs.pathExists(config.glossary)) {
@@ -131,8 +133,25 @@ async function runGen(config: Config) {
     });
     spinner.succeed(chalk.cyan(t.found(files.length, config.targets.join(','), config.model)));
 
+    // 打印并发信息
+    const concurrency = config.concurrency || 5;
+    console.log(chalk.dim(t.concurrencyInfo(concurrency)));
+    if (config.strict) {
+        console.log(chalk.dim(t.strictMode));
+    }
+
+    // 生成任务列表，跳过已缓存的
+    type Task = {
+        file: string;
+        content: string;
+        hash: string;
+        target: string;
+        outputPath: string;
+        cacheKey: string;
+    };
+
+    const tasks: Task[] = [];
     for (const target of config.targets) {
-        console.log(chalk.blueBright(`\n${t.processingLang(target)}`));
         for (const file of files) {
             const content = await fs.readFile(file, 'utf-8');
             const hash = getFileHash(content);
@@ -140,33 +159,70 @@ async function runGen(config: Config) {
             const relativePath = path.relative(config.source, file);
             const outputPath = path.join(sourceDir, target, relativePath);
 
-            // Incremental update check
             if (cache[cacheKey] === hash && await fs.pathExists(outputPath)) {
                 console.log(chalk.gray(t.skipped(relativePath)));
                 continue;
             }
 
-            const fileSpinner = ora(t.translating(relativePath, target)).start();
+            tasks.push({ file, content, hash, target, outputPath, cacheKey });
+        }
+    }
+
+    if (tasks.length === 0) {
+        return;
+    }
+
+    // 并发池执行
+    const limiter = pLimit(concurrency);
+    const errors: { file: string; target: string; error: string }[] = [];
+
+    const results = await Promise.allSettled(
+        tasks.map(task => limiter(async () => {
+            const relativePath = path.relative(config.source, task.file);
+            const fileSpinner = ora(t.translating(relativePath, task.target)).start();
+
             try {
                 const translated = await translator.translate(
-                  content,
-                  target,
-                  config.model,
-                  glossaryData,
-                  config.prompt?.translate || undefined,
-                  { lang: target, glossary: JSON.stringify(glossaryData) }
+                    task.content,
+                    task.target,
+                    config.model,
+                    glossaryData,
+                    config.prompt?.translate || undefined,
+                    { lang: task.target, glossary: JSON.stringify(glossaryData) }
                 );
-                await fs.ensureFile(outputPath);
-                await fs.writeFile(outputPath, translated || '');
 
-                // Update cache
-                cache[cacheKey] = hash;
-                await saveCache(cachePath, cache);
-                fileSpinner.succeed(chalk.green(t.done(relativePath, target)));
+                await fs.ensureFile(task.outputPath);
+                await fs.writeFile(task.outputPath, translated || '');
+                await cacheWriter.update(task.cacheKey, task.hash);
+
+                fileSpinner.succeed(chalk.green(t.done(relativePath, task.target)));
             } catch (err: any) {
-                fileSpinner.fail(chalk.red(t.fail(relativePath, target, err.message)));
+                fileSpinner.fail(chalk.red(t.fail(relativePath, task.target, err.message)));
+
+                if (config.strict) {
+                    throw err;
+                }
+
+                errors.push({ file: relativePath, target: task.target, error: err.message });
             }
+        }))
+    );
+
+    // 等待所有缓存写入完成
+    await cacheWriter.wait();
+
+    // 严格模式下，检查是否有任务 rejected
+    if (config.strict) {
+        const rejected = results.filter(r => r.status === 'rejected');
+        if (rejected.length > 0) {
+            console.error(chalk.red(t.errorSummary(errors.length > 0 ? errors : [{ file: 'unknown', target: '', error: 'Translation failed' }])));
+            process.exit(1);
         }
+    }
+
+    // 宽容模式：打印失败汇总
+    if (errors.length > 0) {
+        console.warn(chalk.yellow(t.errorSummary(errors)));
     }
 }
 
