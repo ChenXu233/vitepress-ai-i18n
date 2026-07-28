@@ -116,7 +116,7 @@ async function runGen(config: Config) {
     const sourceDir = path.resolve(config.source);
     const cachePath = path.resolve(sourceDir, '.i18n-cache.json');
     const cache = await loadCache(cachePath);
-    const cacheWriter = createCacheWriter(cachePath);
+    const cacheWriter = createCacheWriter(cachePath, cache);
 
     let glossaryData = {};
     if (config.glossary && await fs.pathExists(config.glossary)) {
@@ -134,7 +134,7 @@ async function runGen(config: Config) {
     spinner.succeed(chalk.cyan(t.found(files.length, config.targets.join(','), config.model)));
 
     // 打印并发信息
-    const concurrency = config.concurrency || 5;
+    const concurrency = config.concurrency ?? 5;
     console.log(chalk.dim(t.concurrencyInfo(concurrency)));
     if (config.strict) {
         console.log(chalk.dim(t.strictMode));
@@ -200,6 +200,7 @@ async function runGen(config: Config) {
                 fileSpinner.fail(chalk.red(t.fail(relativePath, task.target, err.message)));
 
                 if (config.strict) {
+                    errors.push({ file: relativePath, target: task.target, error: err.message });
                     throw err;
                 }
 
@@ -215,8 +216,7 @@ async function runGen(config: Config) {
     if (config.strict) {
         const rejected = results.filter(r => r.status === 'rejected');
         if (rejected.length > 0) {
-            console.error(chalk.red(t.errorSummary(errors.length > 0 ? errors : [{ file: 'unknown', target: '', error: 'Translation failed' }])));
-            process.exit(1);
+            throw new Error(t.errorSummary(errors));
         }
     }
 

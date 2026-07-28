@@ -10,24 +10,24 @@ export const saveCache = async (p: string, data: any) => fs.writeJson(p, data, {
  * 创建一个串行化缓存写入器，保证并发环境下缓存写入的原子性。
  * 内部维护一个 Promise 链，每次 update 将读→改→写操作追加到链尾。
  */
-export function createCacheWriter(cachePath: string) {
+/**
+ * 创建一个串行化缓存写入器，保证并发环境下缓存写入的原子性。
+ * 接收已加载的缓存对象，update 只修改内存，write 串行化写入磁盘。
+ */
+export function createCacheWriter(cachePath: string, cache: Record<string, string>) {
   let chain: Promise<void> = Promise.resolve();
 
   return {
     /**
-     * 追加一个缓存写入操作。
-     * 返回 Promise 但不阻塞调用方，调用方可以 await 确保写入完成（用于退出前）。
+     * 追加一个缓存写入操作。修改内存中的缓存，串行写入磁盘。
      */
     update(cacheKey: string, hash: string): Promise<void> {
-      chain = chain.then(async () => {
-        try {
-          const cache = await loadCache(cachePath);
-          cache[cacheKey] = hash;
-          await saveCache(cachePath, cache);
-        } catch (err) {
+      cache[cacheKey] = hash;
+      chain = chain.then(() =>
+        saveCache(cachePath, cache).catch((err) => {
           console.error(`[cache] write failed: ${cacheKey}`, err);
-        }
-      });
+        })
+      );
       return chain;
     },
 
