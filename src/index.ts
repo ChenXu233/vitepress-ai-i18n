@@ -94,8 +94,8 @@ async function getResolvedConfig(options: any): Promise<Config> {
         targets,
         model: options.model || process.env.AI_MODEL || fileConfig.model || 'gpt-4o-mini',
         glossary: options.glossary || fileConfig.glossary || null,
-        concurrency: options.concurrency || fileConfig.concurrency || 5,
-        strict: options.strict || fileConfig.strict || false,
+        concurrency: options.concurrency ?? fileConfig.concurrency ?? 5,
+        strict: options.strict ?? fileConfig.strict ?? false,
         prompt: fileConfig.prompt || undefined,
     };
 }
@@ -249,6 +249,8 @@ AI_BASE_URL=https://api.deepseek.com/v1
         const configContent = {
             source: 'docs',
             target: 'zh',
+            concurrency: 5,
+            strict: false,
             glossary: null,
             prompt: {
                 translate: '',
@@ -271,18 +273,18 @@ cli.command('init', 'Initialize configuration files (.env & config.json)').actio
 
 cli.command('gen', 'Translate Markdown documents')
     .option('-t, --target <lang>', 'Target language(s), e.g., en,jp')
-    .option('-c, --concurrency <n>', 'Concurrent translation tasks', { default: 5 })
-    .option('--strict', 'Stop on first error', { default: false })
+    .option('-c, --concurrency <n>', 'Concurrent translation tasks')
+    .option('--strict', 'Stop on first error')
     .action(async (opt) => runGen(await getResolvedConfig(opt)));
 
 cli.command('sync', 'Synchronize nav and sidebar configurations')
-    .option('-t, --target <lang>', 'Target language(s)')
+    .option('-t, --target <lang>', 'Target language(s), e.g., en,jp')
     .action(async (opt) => runSync(await getResolvedConfig(opt)));
 
 cli.command('all', 'Translate docs and sync menu (Default)')
     .option('-t, --target <lang>', 'Target language(s)')
-    .option('-c, --concurrency <n>', 'Concurrent translation tasks', { default: 5 })
-    .option('--strict', 'Stop on first error', { default: false })
+    .option('-c, --concurrency <n>', 'Concurrent translation tasks')
+    .option('--strict', 'Stop on first error')
     .action(async (opt) => {
         const config = await getResolvedConfig(opt);
         await runGen(config);
