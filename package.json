@@ -39,10 +39,11 @@
   "author": {
     "name": "chenxu233",
     "email": "chenxu233@npmjs.com",
-    "url": "https://github.com/chenxu233"
+    "url": "https://github.com/ChenXu233"
   },
   "repository": {
-    "url": "https://github.com/chenxu233/vitepress-ai-i18n.git"
+    "type": "git",
+    "url": "git+https://github.com/ChenXu233/vitepress-ai-i18n.git"
   },
   "license": "MIT",
   "packageManager": "pnpm@10.12.3",
