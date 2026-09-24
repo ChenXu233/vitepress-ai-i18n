@@ -76,4 +76,4 @@ jobs:
 
       # env -u：必须让 NODE_AUTH_TOKEN 彻底不存在。空字符串也会被 npm 视为
       # 「已配置认证」（见 Kuonirad/MCOP-Framework-2.0#561→#564 的排查链）。
-      - run: env -u NODE_AUTH_TOKEN npm publish --access public
+      - run: env -u NODE_AUTH_TOKEN npm publish --access public --provenance
