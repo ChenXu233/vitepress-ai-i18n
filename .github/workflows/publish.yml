@@ -9,6 +9,10 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      # OIDC trusted publishing 必需：允许 Actions 签发 id-token
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v7
 
@@ -16,9 +20,12 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          # Trusted publishing 要求 Node ≥ 22.14.0（带 npm ≥ 11.5.1）
+          node-version: '24'
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
+          # release 构建禁用缓存（官方建议）
+          package-manager-cache: false
 
       - run: pnpm install --frozen-lockfile
 
@@ -26,6 +33,6 @@ jobs:
 
       - run: pnpm build
 
-      - run: pnpm publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # 用 npm 而非 pnpm 发布：OIDC 实现在 npm CLI 内，pnpm publish 不支持
+      # 无需 NODE_AUTH_TOKEN——凭据由 OIDC 在发布时即时签发
+      - run: npm publish --access public
