@@ -30,6 +30,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Diagnostics
+        run: |
+          echo "node: $(node -v)"
+          echo "npm : $(npm -v)"
+          echo "--- npmrc candidates ---"
+          cat ~/.npmrc 2>/dev/null || echo "(no ~/.npmrc)"
+          echo "${NPM_CONFIG_USERCONFIG:-}" | xargs -I{} sh -c 'test -f {} && cat {} || echo "(no userconfig)"'
+          echo "--- OIDC env ---"
+          env | grep -i 'ACTIONS_ID_TOKEN\|NODE_AUTH\|NPM_CONFIG' || echo "(none)"
+
       - run: pnpm test
 
       - run: pnpm build
