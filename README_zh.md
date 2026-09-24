@@ -144,11 +144,19 @@ export default defineConfig({
 |------|------|------|
 | `{{lang}}` | translate | 目标语言代码（如 `zh`、`fr`） |
 | `{{glossary}}` | translate | 术语表 JSON 字符串 |
+| `{{sourcePath}}` | translate | 源文件相对 docs 根的路径（如 `design/rfc/index.md`） |
+| `{{targetPath}}` | translate | 产物文件相对 docs 根的路径（如 `en/design/rfc/index.md`） |
 | `{{target}}` | sync | 目标语言代码 |
 
 如果自定义提示词中未使用某个变量，系统会自动将其追加到末尾。
 
 留空（`""`）则使用该操作的默认提示词。
+
+### 相对链接
+
+翻译产物比源文件多一层语言目录（`src/x.md` → `src/en/x.md`）。指向 docs 根**内部**的链接逐字复制即可正常工作；而**逃出** docs 根的链接（如指向仓库根文件的 `../../../../CONTRIBUTING.md`）会因这多出来的一层面需要多退一级 `../`。
+
+你不需要在自定义提示词里处理这件事。`vpi` 会在翻译后确定性地重定向这类链接（输出里会显示 `（重定向 N 个跨根链接）`），默认提示词也会告诉模型原样复制链接，而不是自己猜深度。
 
 ### 术语表示例
 

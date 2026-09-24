@@ -13,7 +13,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import 'dotenv/config';
 import { Translator, interpolateVariables } from './translator.js';
-import { getFileHash, loadCache, createCacheWriter } from './utils.js';
+import { getFileHash, loadCache, createCacheWriter, retargetRelativeLinks } from './utils.js';
 import pLimit from 'p-limit';
 
 const cli = cac('vpi');
@@ -30,6 +30,7 @@ const t = {
     translating: (f: string, l: string) => isZh ? `正在翻译 [${l}]: ${f}` : `Translating [${l}]: ${f}`,
     done: (f: string, l: string) => isZh ? `完成 [${l}]: ${f}` : `Completed [${l}]: ${f}`,
     fail: (f: string, l: string, e: string) => isZh ? `失败 [${l}]: ${f} (${e})` : `Failed [${l}]: ${f} (${e})`,
+    linkFixed: (n: number) => isZh ? `  (重定向 ${n} 个跨根链接)` : `  (retargeted ${n} cross-root link(s))`,
     concurrencyInfo: (n: number) =>
         isZh ? `  并发: ${n} 个任务同时翻译` : `  Concurrency: ${n} parallel tasks`,
     errorSummary: (errors: { file: string; target: string; error: string }[]) =>
@@ -188,14 +189,30 @@ async function runGen(config: Config) {
                     config.model,
                     glossaryData,
                     config.prompt?.translate || undefined,
-                    { lang: task.target, glossary: JSON.stringify(glossaryData) }
+                    {
+                        lang: task.target,
+                        glossary: JSON.stringify(glossaryData),
+                        sourcePath: path.relative(sourceDir, task.file),
+                        targetPath: path.relative(sourceDir, task.outputPath),
+                    }
+                );
+
+                // 链接重定向：产物多一层语言目录，逃出 sourceDir 的相对链接需重算。
+                const { content: fixed, fixed: fixCount } = retargetRelativeLinks(
+                    translated || '',
+                    task.file,
+                    task.outputPath,
+                    sourceDir
                 );
 
                 await fs.ensureFile(task.outputPath);
-                await fs.writeFile(task.outputPath, translated || '');
+                await fs.writeFile(task.outputPath, fixed);
                 await cacheWriter.update(task.cacheKey, task.hash);
 
-                fileSpinner.succeed(chalk.green(t.done(relativePath, task.target)));
+                fileSpinner.succeed(
+                    chalk.green(t.done(relativePath, task.target)) +
+                    (fixCount > 0 ? chalk.dim(t.linkFixed(fixCount)) : '')
+                );
             } catch (err: any) {
                 fileSpinner.fail(chalk.red(t.fail(relativePath, task.target, err.message)));
 

@@ -137,11 +137,24 @@ You can customize the AI system prompts for translation and menu sync via `vpi18
 |----------|---------|-------------|
 | `{{lang}}` | translate | Target language code (e.g., `zh`, `fr`) |
 | `{{glossary}}` | translate | Glossary JSON string |
+| `{{sourcePath}}` | translate | Source file path relative to docs root (e.g., `design/rfc/index.md`) |
+| `{{targetPath}}` | translate | Target file path relative to docs root (e.g., `en/design/rfc/index.md`) |
 | `{{target}}` | sync | Target language code |
 
 If a variable is not used in your custom prompt, it will be automatically appended.
 
 Leave a field empty (`""`) to use the default prompt for that operation.
+
+### Relative links
+
+Translated files live one directory deeper than their source (`src/x.md` → `src/en/x.md`).
+Links pointing **inside** the docs root keep working when copied verbatim, but links that
+**escape** the docs root (e.g. `../../../../CONTRIBUTING.md` pointing at a repo-level file)
+need one extra `../` because of that extra level.
+
+You don't need to handle this in a custom prompt. `vpi` retargets such links deterministically
+after translation (reported as `(retargeted N cross-root link(s))`), and the default prompt
+tells the model to copy links verbatim rather than guess at the depth itself.
 
 ### Glossary Example
 

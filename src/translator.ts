@@ -10,7 +10,7 @@ export function interpolateVariables(
 ): string {
   const used = new Set<string>();
   let result = template.replace(
-    /\{\{(lang|glossary|target)\}\}/g,
+    /\{\{(lang|glossary|target|sourcePath|targetPath)\}\}/g,
     (_match, key: string) => {
       used.add(key);
       return variables[key] ?? '';
@@ -27,6 +27,12 @@ export function interpolateVariables(
   }
   if (variables.glossary && !used.has('glossary')) {
     suffixes.push(`Glossary: ${variables.glossary}`);
+  }
+  if (variables.sourcePath && !used.has('sourcePath')) {
+    suffixes.push(`Source file path (relative to docs root): ${variables.sourcePath}`);
+  }
+  if (variables.targetPath && !used.has('targetPath')) {
+    suffixes.push(`Target file path (relative to docs root): ${variables.targetPath}`);
   }
 
   if (suffixes.length > 0) {
@@ -79,6 +85,7 @@ Keep Frontmatter as raw YAML between --- delimiters, translate only string value
 Keep code blocks (\`\`\`...) unchanged.
 CRITICAL: NEVER wrap the ENTIRE response in code fences like \`\`\`markdown, \`\`\`md, or \`\`\`.
 Return the translated Markdown content directly, not wrapped in any code block.
+Keep relative links (](...)) byte-for-byte unchanged. Do NOT adjust \`../\` depth yourself.
 Glossary: ${JSON.stringify(filteredGlossary)}`;
 
     let systemPrompt: string;

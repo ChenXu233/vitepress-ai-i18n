@@ -21,7 +21,8 @@
     "dev": "tsup src/index.ts --format esm --watch",
     "build": "tsup src/index.ts --format esm --clean --dts --minify",
     "prepublishOnly": "pnpm build",
-    "release": "npx changeset"
+    "release": "npx changeset",
+    "test": "tsx --test test/*.test.ts"
   },
   "keywords": [
     "vitepress",
