@@ -23,7 +23,8 @@ jobs:
           # Trusted publishing 要求 Node ≥ 22.14.0（带 npm ≥ 11.5.1）
           node-version: '24'
           cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
+          # 不设 registry-url：那会让 setup-node 生成引用 ${NODE_AUTH_TOKEN}
+          # 的 .npmrc，而 OIDC 发布不使用该变量，反而干扰凭据协商。
           # release 构建禁用缓存（官方建议）
           package-manager-cache: false
 
@@ -36,3 +37,5 @@ jobs:
       # 用 npm 而非 pnpm 发布：OIDC 实现在 npm CLI 内，pnpm publish 不支持
       # 无需 NODE_AUTH_TOKEN——凭据由 OIDC 在发布时即时签发
       - run: npm publish --access public
+        env:
+          NPM_CONFIG_PROVENANCE: 'true'
